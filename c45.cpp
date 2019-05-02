@@ -1,4 +1,4 @@
-//This is a project for id3 algorithm
+//This is a project for C4.5 algorithm
 
 #include <iostream>
 #include <string>
@@ -103,20 +103,38 @@ double getInfogain(vector< vector<int> > dataset, int axis){
 
 }
 
+//Caculate the gain rate
+double getInfogainRate(vector< vector<int> > dataset, int axis){
+    double gain = getInfogain(dataset, axis);
+    double targetShannonEntSum = 0.0;
+    
+    map<int, int> classify = getFeatureClassify(dataset, axis);
+
+    auto it = classify.begin();
+    for(it; it != classify.end(); it++){
+        auto splitDatasets = splitDataset(dataset, axis, it -> first);
+        auto pi = double(splitDatasets.size()) / double(dataset.size());
+        targetShannonEntSum += pi * log2(pi);
+    }
+
+    return gain / (-targetShannonEntSum);
+
+}
+
 //Find the best split feature
 int getBestSplitFeature(vector< vector<int> > dataset){
     int i;
-    double bestInfogain = 0.0;
+    double bestInfogainRate = 0.0;
     int bestFeatureAxis;
     int featureCount = dataset[0].size() - 1;
 
     for(i = 0; i < featureCount; i++){
-        auto infogain = getInfogain(dataset, i);
-        if (bestInfogain == 0){
-            bestInfogain = infogain;
+        auto infogainRate = getInfogainRate(dataset, i);
+        if (bestInfogainRate == 0){
+            bestInfogainRate = infogainRate;
             bestFeatureAxis = i;
-        } else if (infogain > bestInfogain){
-            bestInfogain = infogain;
+        } else if (infogainRate > bestInfogainRate){
+            bestInfogainRate = infogainRate;
             bestFeatureAxis = i;
         }
     }
@@ -194,6 +212,10 @@ node *createTree(vector< vector<int> > dataset, vector<int> labels){
     return root;
 }
 
+double log2(double n){
+    return log10(n) / log10(2.0);
+ }
+
 //Test the id3 algorithm
 int predict(node* tree, vector<int> labels, vector<int> data){
     while(tree->next.size()) {
@@ -217,7 +239,7 @@ int predict(node* tree, vector<int> labels, vector<int> data){
 
 int main(){
     int i, j;
-    vector< vector<int> > dataset = inputFile("lenses.data");  //training set
+    vector< vector<int> > dataset = inputFile("lenses.data");
     vector< vector<int> > testset = inputFile("test.data");
     int l[4] = {1, 2, 3, 4};
     vector<int> labels(l, l + 4);
@@ -237,3 +259,6 @@ int main(){
     accuracy = accNum / double(datasum);
     cout << "accuracy = " << accuracy * 100 << "%" << endl;
 }
+
+
+ 
